@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Simulatore Modulo 7 - 115 Domande Random</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; padding: 20px; }
+        .container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 25px rgba(0,0,0,0.1); }
+        h1 { color: #1a3a5a; text-align: center; border-bottom: 3px solid #1a3a5a; padding-bottom: 10px; }
+        .section-header { background: #1a3a5a; color: white; padding: 10px 20px; margin: 30px 0 15px 0; border-radius: 5px; font-weight: bold; text-transform: uppercase; font-size: 0.9em; }
+        .question-card { margin-bottom: 25px; padding: 20px; border: 1px solid #ddd; border-radius: 10px; background: #fff; }
+        .question-text { font-weight: bold; margin-bottom: 15px; font-size: 1.1em; color: #333; }
+        .options { display: grid; gap: 10px; }
+        button { text-align: left; padding: 12px; border: 1px solid #ccc; border-radius: 8px; background: white; cursor: pointer; transition: 0.2s; font-size: 14px; }
+        button:hover:not(:disabled) { background: #e9ecef; border-color: #1a3a5a; }
+        .correct { background: #28a745 !important; color: white; border-color: #1e7e34; font-weight: bold; }
+        .wrong { background: #dc3545 !important; color: white; border-color: #bd2130; }
+        .counter { position: sticky; top: 10px; background: #1a3a5a; color: white; padding: 10px; border-radius: 8px; text-align: center; z-index: 100; margin-bottom: 20px; font-weight: bold; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="counter" id="status">Domande completate: 0 / 115</div>
+    <h1>Simulatore Integrale Modulo 7</h1>
+    <div id="quiz-container"></div>
+</div>
+<script>
+// Funzione per mescolare le opzioni
+function shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
+
+const questionsData = [
+    { cat: "Materiali e Difetti", q: "Cos'è il Creep?", a: ["Deformazione plastica lenta e progressiva sotto carico costante ad alte temperature", "Rottura improvvisa per fatica", "Corrosione interna causata da umidità"], c: "Deformazione plastica lenta e progressiva sotto carico costante ad alte temperature" },
+    { cat: "Materiali e Difetti", q: "A cosa servono i fermi 'Remove Before Flight'?", a: ["A bloccare movimenti accidentali in manutenzione", "A segnalare il peso massimo al decollo", "A bloccare l'estensione dei flap"], c: "A bloccare movimenti accidentali in manutenzione" },
+    { cat: "Materiali e Difetti", q: "Cosa indica il 'Blow out'?", a: ["Anomalia con disattivazione indicazione", "Scarico rapido della pressione", "Pressione gomme oltre il limite"], c: "Anomalia con disattivazione indicazione" },
+    { cat: "Sistemi", q: "Cosa indica il microinterruttore Weight On Wheel (WOW)?", a: ["Se l'aereo è a terra o in volo", "Il peso esatto su ogni ruota", "La velocità di rotazione delle ruote"], c: "Se l'aereo è a terra o in volo" },
+    { cat: "Sistemi", q: "A cosa serve la sonda di angolo di attacco?", a: ["Misura l'angolo tra corda alare e flusso relativo", "Misura la quota di volo", "Misura la velocità orizzontale"], c: "Misura l'angolo tra corda alare e flusso relativo" },
+    { cat: "Manutenzione", q: "Cosa sono le componenti a vita limitata?", a: ["Sostituzione obbligatoria dopo ore, cicli o calendario", "Pezzi sostituiti solo se visibilmente usurati", "Parti che scadono ogni 2 anni"], c: "Sostituzione obbligatoria dopo ore, cicli o calendario" },
+    { cat: "Manutenzione", q: "Ispezioni visive assistite:", a: ["Uso di specchi, lenti o boroscopi", "Uso di radar a terra", "Solo ispezione col tatto"], c: "Uso di specchi, lenti o boroscopi" },
+    { cat: "Manutenzione", q: "Il boroscopio serve per:", a: ["Ispezioni interne senza smontaggio", "Misurare la tensione dei cavi", "Calibrare i motori"], c: "Ispezioni interne senza smontaggio" },
+    { cat: "Manutenzione", q: "Com'è costruito un boroscopio?", a: ["Tubo con lenti, fibre ottiche e specchi", "Tubo vuoto in alluminio", "Un semplice cavo elettrico con LED"], c: "Tubo con lenti, fibre ottiche e specchi" },
+    { cat: "Corrosione", q: "Definizione di corrosione:", a: ["Processo chimico/elettrochimico che degrada il metallo", "Danno meccanico da urto", "Usura da attrito"], c: "Processo chimico/elettrochimico che degrada il metallo" },
+    { cat: "Corrosione", q: "Prevenzione corrosione principale:", a: ["Pulizia, lavaggio e protezione superficiale", "Aumento della velocità di crociera", "Uso di vernici scure"], c: "Pulizia, lavaggio e protezione superficiale" },
+    { cat: "Corrosione", q: "Tipo di corrosione più invasiva per l'alluminio:", a: ["Pitting (vaiolatura)", "Superficiale uniforme", "Corrosione da sfregamento"], c: "Pitting (vaiolatura)" },
+    { cat: "Corrosione", q: "Aspetto della corrosione sull'alluminio:", a: ["Ossidazione biancastra e polverosa", "Polvere rugginosa rossa", "Macchie bluastre"], c: "Ossidazione biancastra e polverosa" },
+    { cat: "Corrosione", q: "Le leghe di magnesio sono sensibili alla corrosione?", a: ["Sì, sono estremamente sensibili", "No, sono materiali inossidabili", "Solo se esposte al sole"], c: "Sì, sono estremamente sensibili" },
+    { cat: "Invecchiamento", q: "Vita utile di un velivolo:", a: ["Periodo in cui opera in sicurezza mantenendo i requisiti", "Il tempo massimo di volo giornaliero", "La durata della garanzia dei motori"], c: "Periodo in cui opera in sicurezza mantenendo i requisiti" },
+    { cat: "Invecchiamento", q: "Parametri fondamentali della vita utile:", a: ["Ore volo, cicli pressurizzazione, ambiente e carichi", "Solo ore di volo totali", "Solo numero di passeggeri trasportati"], c: "Ore volo, cicli pressurizzazione, ambiente e carichi" },
+    { cat: "Invecchiamento", q: "Quali sono i tre criteri di progettazione per la vita utile?", a: ["Safe Life, Fail Safe, Damage Tolerance", "Hard Time, On Condition, Monitoring", "Livello 1, 2 e 3"], c: "Safe Life, Fail Safe, Damage Tolerance" },
+    { cat: "Invecchiamento", q: "Cos'è la 'Vita Economica'?", a: ["Quando il costo di manutenzione supera il valore del velivolo", "Quando scade il contratto di leasing", "Il costo del carburante"], c: "Quando il costo di manutenzione supera il valore del velivolo" },
+    { cat: "Invecchiamento", q: "Cause principali di invecchiamento strutturale:", a: ["Fatica, corrosione e stress ambientale", "Mancanza di verniciatura", "Uso di ricambi non certificati"], c: "Fatica, corrosione e stress ambientale" },
+    { cat: "Documentazione", q: "Cosa significa SRM?", a: ["Structural Repair Manual", "System Radio Manual", "Safety Requirements Manual"], c: "Structural Repair Manual" },
+    { cat: "Documentazione", q: "Chi è l'ente che fornisce l'SRM?", a: ["Il costruttore del velivolo (OEM)", "L'autorità aeronautica nazionale", "L'operatore di linea"], c: "Il costruttore del velivolo (OEM)" },
+    { cat: "Documentazione", q: "Chi deve approvare l'SRM?", a: ["Il costruttore e l'Autorità Aeronautica", "Il capo officina", "Il pilota collaudatore"], c: "Il costruttore e l'Autorità Aeronautica" },
+    { cat: "Riparazioni", q: "Parametri critici di una riparazione strutturale:", a: ["Ripristino resistenza, materiali equivalenti e protezione", "Colore della vernice e simmetria", "Peso minimo e basso costo"], c: "Ripristino resistenza, materiali equivalenti e protezione" },
+    { cat: "Riparazioni", q: "Cosa è obbligatorio dopo riparazioni su parti rotanti?", a: ["Bilanciamento dinamico", "Sostituzione di tutti i cuscinetti", "Solo pulizia superficiale"], c: "Bilanciamento dinamico" },
+    { cat: "Danni", q: "Cos'è la fatica dei materiali?", a: ["Cedimento progressivo dovuto a carichi ciclici", "Stress da alte temperature", "Danno causato da fulmini"], c: "Cedimento progressivo dovuto a carichi ciclici" },
+    { cat: "Danni", q: "Cosa si intende per 'danno trascurabile'?", a: ["Danno entro i limiti SRM che non richiede intervento immediato", "Un danno invisibile ad occhio nudo", "Un danno che guarisce con l'uso"], c: "Danno entro i limiti SRM che non richiede intervento immediato" },
+    { cat: "Riparazioni", q: "Differenza tra inserto e rinforzo:", a: ["L'inserto sostituisce una zona, il rinforzo aggiunge spessore", "Sono sinonimi", "L'inserto è solo interno al motore"], c: "L'inserto sostituisce una zona, il rinforzo aggiunge spessore" },
+    { cat: "Documentazione", q: "Cos'è l'SRADS?", a: ["Valutazione tecnica per riparazioni non standard", "Un sistema radar di prossimità", "Un tipo di rivetto a strappo"], c: "Valutazione tecnica per riparazioni non standard" },
+    { cat: "Danni", q: "Cosa definisce l'intaccatura (Nick)?", a: ["Asportazione di materiale con riduzione sezione resistente", "Semplice spostamento di metallo senza asportazione", "Un graffio della vernice"], c: "Asportazione di materiale con riduzione sezione resistente" },
+    { cat: "Danni", q: "Cosa definisce l'ammaccatura (Dent)?", a: ["Deformazione plastica senza asportazione di materiale", "Un foro passante", "Una cricca superficiale"], c: "Deformazione plastica senza asportazione di materiale" },
+    { cat: "Danni", q: "Cos'è una cricca (Crack)?", a: ["Discontinuità lineare che tende a propagarsi sotto carico", "Una bolla nel materiale", "Una macchia di corrosione"], c: "Discontinuità lineare che tende a propagarsi sotto carico" },
+    { cat: "Danni", q: "A cosa serve lo 'Stop Drilling'?", a: ["Praticare un foro per arrestare l'avanzamento della cricca", "Alleggerire la struttura", "Creare fori per i rivetti"], c: "Praticare un foro per arrestare l'avanzamento della cricca" },
+    { cat: "Progettazione", q: "Filosofia Safe Life:", a: ["Sostituzione del componente prima dello sviluppo del danno", "Controllo visivo giornaliero obbligatorio", "Il componente non può rompersi"], c: "Sostituzione del componente prima dello sviluppo del danno" },
+    { cat: "Progettazione", q: "Filosofia Fail Safe:", a: ["Presenza di ridondanza strutturale (percorsi alternativi)", "Il sistema è a prova di errore umano", "Sostituzione immediata dopo ogni volo"], c: "Presenza di ridondanza strutturale (percorsi alternativi)" },
+    { cat: "Invecchiamento", q: "Cos'è il CPCP?", a: ["Corrosion Prevention and Control Program", "Controllo Pressione Carrello Principale", "Center of Pressure Control Process"], c: "Corrosion Prevention and Control Program" },
+    { cat: "CND", q: "Quanti sono i livelli di certificazione NDT?", a: ["1, 2 e 3", "A, B, C e D", "Base e Avanzato"], c: "1, 2 e 3" },
+    { cat: "CND - LP", q: "Quali difetti individuano i Liquidi Penetranti?", a: ["Difetti superficiali aperti all'esterno", "Inclusioni di scoria interne", "Bolle d'aria nelle fusioni"], c: "Difetti superficiali aperti all'esterno" },
+    { cat: "CND - LP", q: "Qual è la forza fisica alla base del metodo LP?", a: ["Capillarità", "Magnetismo", "Elettromagnetismo"], c: "Capillarità" },
+    { cat: "CND - LP", q: "Perché è fondamentale la pulizia post-ispezione?", a: ["Per prevenire corrosione causata dai residui chimici", "Per poter verniciare subito", "Solo per estetica"], c: "Per prevenire corrosione causata dai residui chimici" },
+    { cat: "CND - LP", q: "È possibile usare i liquidi penetranti su superfici verniciate?", a: ["No, la superficie deve essere nuda e pulita", "Sì, se la vernice è trasparente", "Solo se si usa il metodo fluorescente"], c: "No, la superficie deve essere nuda e pulita" },
+    { cat: "CND - LP", q: "Uso di spazzole metalliche per pulizia pre-LP:", a: ["Sconsigliato perché possono ostruire le cricche", "Consigliato per pulire a fondo", "Obbligatorio su titanio"], c: "Sconsigliato perché possono ostruire le cricche" },
+    { cat: "CND - LP", q: "Qual è la funzione dello sviluppatore?", a: ["Richiamare il penetrante fuori dal difetto per contrasto", "Pulire il pezzo dal liquido in eccesso", "Sigillare la cricca trovata"], c: "Richiamare il penetrante fuori dal difetto per contrasto" },
+    { cat: "CND - MT", q: "Il metodo a particelle magnetiche si usa su:", a: ["Materiali ferromagnetici", "Leghe d'alluminio", "Tutti i metalli conduttori"], c: "Materiali ferromagnetici" },
+    { cat: "CND - MT", q: "Cos'è la 'fuga di flusso' magnetico?", a: ["Dispersione di linee di forza in corrispondenza di un difetto", "Perdita di corrente elettrica", "Riscaldamento del pezzo"], c: "Dispersione di linee di forza in corrispondenza di un difetto" },
+    { cat: "CND - MT", q: "La magnetizzazione circolare diretta si ottiene:", a: ["Facendo passare corrente elettrica direttamente nel pezzo", "Usando una bobina esterna", "Avvicinando un magnete permanente"], c: "Facendo passare corrente elettrica direttamente nel pezzo" },
+    { cat: "CND - MT", q: "A cosa serve il test del tubo centrifugo?", a: ["Controllare la concentrazione di particelle nel bagno", "Far ruotare il pezzo per pulirlo", "Misurare la velocità di prova"], c: "Controllare la concentrazione di particelle nel bagno" },
+    { cat: "CND - MT", q: "La smagnetizzazione finale è:", a: ["Necessaria per evitare attrazione di detriti o interferenze", "Inutile se il pezzo è piccolo", "Dannosa per la struttura molecolare"], c: "Necessaria per evitare attrazione di detriti o interferenze" },
+    { cat: "CND - MT", q: "Il Gaussometro serve a misurare:", a: ["Il campo magnetico residuo", "Il peso del pezzo", "La profondità della cricca"], c: "Il campo magnetico residuo" },
+    { cat: "CND - RT", q: "Qual è il simbolo delle radiazioni ionizzanti (X e Gamma)?", a: ["Trifoglio giallo su fondo nero/magenta", "Teschio rosso", "Fulmine in un triangolo"], c: "Trifoglio giallo su fondo nero/magenta" },
+    { cat: "CND - RT", q: "Come si forma l'immagine radiografica?", a: ["Differente assorbimento dei raggi in base a spessore e densità", "Riflessione dei raggi sulla superficie", "Riscaldamento della lastra"], c: "Differente assorbimento dei raggi in base a spessore e densità" },
+    { cat: "CND - RT", q: "Cosa indica la sigla IQI?", a: ["Indicatore di Qualità dell'Immagine", "Indice di Quota Integrato", "Interruttore Quadro Ispezione"], c: "Indicatore di Qualità dell'Immagine" },
+    { cat: "CND - RT", q: "A cosa serve il dosimetro?", a: ["Monitorare la dose di radiazioni assorbita dall'operatore", "Misurare la larghezza della cricca", "Controllare la tensione del tubo X"], c: "Monitorare la dose di radiazioni assorbita dall'operatore" },
+    { cat: "CND - UT", q: "L'effetto piezoelettrico alla base degli ultrasuoni è:", a: ["Conversione di impulsi elettrici in vibrazioni meccaniche", "Riscaldamento di un cristallo", "Creazione di un campo magnetico rotante"], c: "Conversione di impulsi elettrici in vibrazioni meccaniche" },
+    { cat: "CND - UT", q: "La presenza del solo 'eco di fondo' in pulse-echo indica:", a: ["Materiale integro senza difetti interni", "Cricca passante", "Sonda non collegata"], c: "Materiale integro senza difetti interni" },
+    { cat: "CND - UT", q: "Usare una frequenza UT molto alta comporta:", a: ["Minore profondità di penetrazione ma maggiore risoluzione", "Maggiore profondità di penetrazione", "Nessuna variazione nel segnale"], c: "Minore profondità di penetrazione ma maggiore risoluzione" },
+    { cat: "CND - ET", q: "Le Correnti Indotte (Eddy Current) si applicano su:", a: ["Tutti i materiali conduttivi", "Solo materiali ferromagnetici", "Solo plastiche conduttive"], c: "Tutti i materiali conduttivi" },
+    { cat: "CND - ET", q: "Il circuito di misura ET solitamente è un:", a: ["Ponte di Wheatstone", "Trasformatore di isolamento", "Circuitore risonante"], c: "Ponte di Wheatstone" },
+    { cat: "CND - ET", q: "Cos'è lo 'Skin Effect' (effetto pelle)?", a: ["Concentrazione delle correnti in superficie ad alta frequenza", "Deterioramento della sonda", "Riscaldamento della pelle dell'operatore"], c: "Concentrazione delle correnti in superficie ad alta frequenza" },
+    { cat: "CND - ET", q: "Il piano delle impedenze è:", a: ["Il display dello strumento ET", "La base di appoggio dei pezzi", "Un documento tecnico"], c: "Il display dello strumento ET" }
+];
+const extraQuestionsData = [
+    { cat: "Pratica", q: "I giunti di trasporto servono a:", a: ["Proteggere e bloccare parti mobili durante il trasporto", "Unire le ali alla fusoliera", "Sostituire i bulloni mancanti"], c: "Proteggere e bloccare parti mobili durante il trasporto" },
+    { cat: "Pratica", q: "Precauzione prima dell'hangaraggio:", a: ["Inserire pin di sicurezza e staccare batterie", "Lasciare le luci accese", "Aprire tutti i portelli"], c: "Inserire pin di sicurezza e staccare batterie" },
+    { cat: "Pratica", q: "Cos'è il manuale CMM?", a: ["Component Maintenance Manual", "Captain Management Manual", "Corrective Manual Mode"], c: "Component Maintenance Manual" },
+    { cat: "Pratica", q: "Una chiave torsiometrica caduta a terra:", a: ["Va verificata e ricalibrata prima dell'uso", "Può essere usata tranquillamente", "Si butta via immediatamente"], c: "Va verificata e ricalibrata prima dell'uso" },
+    { cat: "Troubleshooting", q: "Qual è la sequenza logica del troubleshooting?", a: ["Problema -> Causa -> Soluzione -> Verifica", "Soluzione -> Problema -> Verifica", "Sostituzione -> Prova volo"], c: "Problema -> Causa -> Soluzione -> Verifica" },
+    { cat: "Troubleshooting", q: "Il manuale TSM contiene:", a: ["Sintomo, possibili cause e azioni correttive", "Solo l'elenco dei prezzi dei pezzi", "Foto storiche del velivolo"], c: "Sintomo, possibili cause e azioni correttive" },
+    { cat: "Troubleshooting", q: "Cos'è la tecnica dello 'Swapping'?", a: ["Scambio componenti tra sistemi per isolare il guasto", "Pulizia approfondita dei contatti", "Vendita del pezzo guasto"], c: "Scambio componenti tra sistemi per isolare il guasto" },
+    { cat: "Troubleshooting", q: "Cosa dice la 'Legge di Murphy' applicata al montaggio?", a: ["Se un pezzo può essere montato errato, qualcuno lo farà", "Tutto andrà bene se segui il manuale", "I pezzi avanzano sempre"], c: "Se un pezzo può essere montato errato, qualcuno lo farà" },
+    { cat: "Tecniche CND", q: "Cosa può fare un operatore NDT Livello 2?", a: ["Eseguire controlli, tarare e firmare certificati", "Solo pulire i pezzi e osservare", "Progettare nuovi velivoli"], c: "Eseguire controlli, tarare e firmare certificati" },
+    { cat: "Tecniche CND", q: "Cosa può fare un operatore NDT Livello 3?", a: ["Stabilire procedure e tecniche d'ispezione", "Solo eseguire prove pratiche", "Manovrare l'aereo in pista"], c: "Stabilire procedure e tecniche d'ispezione" },
+    { cat: "Fisica CND", q: "La velocità del suono nell'acciaio è circa:", a: ["5900 m/s", "340 m/s", "1000 m/s"], c: "5900 m/s" },
+    { cat: "Sistemi", q: "Cosa significa BITE?", a: ["Built In Test Equipment (autodiagnosi)", "Basic Internal Tooling", "Bolt Installation Technique"], c: "Built In Test Equipment (autodiagnosi)" },
+    { cat: "Fisica CND", q: "I raggi X sono radiazioni:", a: ["Ionizzanti", "Magnetiche non pericolose", "Infrarosse"], c: "Ionizzanti" },
+    { cat: "Difetti", q: "Cosa sono le 'soffiature' nelle fusioni?", a: ["Gas intrappolati durante la solidificazione", "Piccoli fori di proiettile", "Perdite d'aria compressa"], c: "Gas intrappolati durante la solidificazione" },
+    { cat: "CND - LP", q: "Cos'è il 'Dwell Time'?", a: ["Il tempo di permanenza del penetrante sul pezzo", "Il tempo di asciugatura finale", "Il tempo di attesa tra due voli"], c: "Il tempo di permanenza del penetrante sul pezzo" },
+    { cat: "Protezioni", q: "Cos'è l'Aluminising?", a: ["Spruzzatura di alluminio su acciaio per zone calde", "Un tipo di vernice lucida", "Il riciclo delle parti in alluminio"], c: "Spruzzatura di alluminio su acciaio per zone calde" },
+    { cat: "Protezioni", q: "L'Anodizzazione è:", a: ["Un trattamento elettrolitico dell'alluminio", "Una riparazione della cricca", "Un lavaggio con sapone acido"], c: "Un trattamento elettrolitico dell'alluminio" },
+    { cat: "Protezioni", q: "La Cromatazione si usa principalmente per:", a: ["Leghe di magnesio", "Acciaio inox", "Gomma vulcanizzata"], c: "Leghe di magnesio" },
+    { cat: "Sicurezza", q: "Cos'è il FOD?", a: ["Foreign Object Damage (danno da oggetti estranei)", "Flight Operation Data", "Fast Oil Drain"], c: "Foreign Object Damage (danno da oggetti estranei)" },
+    { cat: "CND - ET", q: "Il 'Lift-off' nelle correnti indotte è:", a: ["La distanza tra sonda e superficie del pezzo", "Il momento del decollo", "La perdita di segnale totale"], c: "La distanza tra sonda e superficie del pezzo" },
+    { cat: "CND - UT", q: "Una sonda angolata UT serve a generare:", a: ["Onde trasversali inclinate", "Onde sonore più veloci", "Onde visibili a occhio nudo"], c: "Onde trasversali inclinate" },
+    { cat: "CND - MT", q: "Le particelle in MT possono essere:", a: ["Secche o in sospensione liquida", "Solo sotto forma di vernice", "Solo gassose"], c: "Secche o in sospensione liquida" },
+    { cat: "Sistemi", q: "I sincronizzatori dei motori servono a:", a: ["Ridurre vibrazioni e rumore in cabina", "Aumentare la spinta massima", "Risparmiare il 50% di olio"], c: "Ridurre vibrazioni e rumore in cabina" },
+    { cat: "Progettazione", q: "Il criterio Safe Life si applica solitamente a:", a: ["Carrelli e parti critiche soggette a fatica", "Arredi interni", "Finestrini passeggeri"], c: "Carrelli e parti critiche soggette a fatica" },
+    { cat: "Progettazione", q: "Il Damage Tolerance richiede obbligatoriamente:", a: ["Ispezioni periodiche programmate", "Nessuna manutenzione", "Sostituzione annuale totale"], c: "Ispezioni periodiche programmate" },
+    { cat: "Corrosione", q: "La corrosione intergranulare:", a: ["Attacca i bordi dei grani del metallo", "Attacca solo la vernice esterna", "Avviene solo ad altissime velocità"], c: "Attacca i bordi dei grani del metallo" },
+    { cat: "Corrosione", q: "La corrosione galvanica avviene tra:", a: ["Due metalli diversi a contatto elettrico", "Pezzi della stessa lega", "Solo su parti in gomma"], c: "Two metalli diversi a contatto elettrico" },
+    { cat: "Corrosione", q: "Escrescenze biancastre simili a neve indicano:", a: ["Corrosione profonda dell'alluminio", "Presenza di ghiaccio", "Residui di detergente"], c: "Corrosione profonda dell'alluminio" },
+    { cat: "Sicurezza", q: "Se perdi un attrezzo a bordo:", a: ["Bisogna segnalarlo subito come potenziale FOD", "Si può ignorare se piccolo", "Lo si ricompra senza dire nulla"], c: "Bisogna segnalarlo subito come potenziale FOD" },
+    { cat: "CND - UT", q: "Il gel accoppiante in UT serve a:", a: ["Permettere il passaggio delle onde sonore", "Raffreddare il cristallo", "Lubrificare per la pulizia"], c: "Permettere il passaggio delle onde sonore" },
+    { cat: "CND - MT", q: "Una bobina in MT crea un campo magnetico:", a: ["Longitudinale", "Circolare", "Trasversale incrociato"], c: "Longitudinale" },
+    { cat: "CND - LP", q: "La lampada di Wood emette:", a: ["Luce Ultravioletta (UV)", "Raggi X", "Luce Infrarossa"], c: "Luce Ultravioletta (UV)" },
+    { cat: "CND - RT", q: "Le sorgenti Gamma sono costituite da:", a: ["Isotopi radioattivi", "Batterie ad alta tensione", "Lampadine alogene"], c: "Isotopi radioattivi" },
+    { cat: "CND - RT", q: "Il penetrametro è:", a: ["Un altro modo per chiamare l'IQI", "Uno strumento per misurare la densità dell'olio", "Un sensore di profondità"], c: "Un altro modo per chiamare l'IQI" },
+    { cat: "CND - UT", q: "La frequenza standard degli ultrasuoni aeronautici è:", a: ["Tra 1 e 10 MHz", "Tra 20 e 50 Hz", "Oltre 100 GHz"], c: "Tra 1 e 10 MHz" },
+    { cat: "Materiali", q: "La fragilizzazione da idrogeno riguarda spesso:", a: ["Acciai ad alta resistenza dopo trattamenti chimici", "Le leghe di plastica leggera", "Le parti in gomma degli pneumatici"], c: "Acciai ad alta resistenza dopo trattamenti chimici" },
+    { cat: "Manutenzione", q: "Un bullone con il filetto rovinato va:", a: ["Sostituito immediatamente", "Riparato con una filiera", "Stretto più forte"], c: "Sostituito immediatamente" },
+    { cat: "Manutenzione", q: "La coppia di serraggio è:", a: ["La forza di rotazione applicata a una vite", "Il peso del bullone", "La lunghezza della chiave"], c: "La forza di rotazione applicata a una vite" },
+    { cat: "Manutenzione", q: "Il frenafiletti serve a:", a: ["Prevenire lo svitamento accidentale per vibrazioni", "Lubrificare il filetto", "Proteggere dalla ruggine"], c: "Prevenire lo svitamento accidentale per vibrazioni" },
+    { cat: "Struttura", q: "I fori e gli angoli vivi sono zone di:", a: ["Stress Concentration (concentrazione di sforzi)", "Minore pericolo di rottura", "Nessun interesse strutturale"], c: "Stress Concentration (concentrazione di sforzi)" },
+    { cat: "Struttura", q: "Una riparazione a filo (flush) garantisce:", a: ["Migliore aerodinamica superficiale", "Minore costo di esecuzione", "Maggiore visibilità del danno"], c: "Migliore aerodinamica superficiale" },
+    { cat: "Manuali", q: "Cosa significa AMM?", a: ["Aircraft Maintenance Manual", "Auto Mode Manual", "Air Management Monitor"], c: "Aircraft Maintenance Manual" },
+    { cat: "CND - MT", q: "I puntali (prods) in MT creano un campo:", a: ["Circolare", "Longitudinale", "Sferico"], c: "Circolare" },
+    { cat: "CND - ET", q: "Le correnti parassite sono un altro nome per:", a: ["Eddy Currents", "Correnti statiche", "Scariche atmosferiche"], c: "Eddy Currents" },
+    { cat: "CND", q: "La rilevabilità di un difetto dipende da:", a: ["Dimensione, forma e orientamento", "Solo dal colore del pezzo", "Solo dalla temperatura ambiente"], c: "Dimensione, forma e orientamento" },
+    { cat: "Troubleshooting", q: "L'isolamento del guasto serve a:", a: ["Eliminare progressivamente le cause improbabili", "Cambiare tutti i pezzi insieme", "Trovare il colpevole tra i tecnici"], c: "Eliminare progressivamente le cause improbabili" },
+    { cat: "Troubleshooting", q: "La verifica post-riparazione consiste in:", a: ["Un test funzionale del sistema interessato", "Solo un controllo visivo esterno", "Il volo con passeggeri a bordo"], c: "Un test funzionale del sistema interessato" },
+    { cat: "Materiali", q: "L'Alclad è:", a: ["Alluminio puro laminato su una lega", "Un tipo di colla strutturale", "Un acciaio speciale"], c: "Alluminio puro laminato su una lega" },
+    { cat: "Corrosione", q: "La corrosione per esfoliazione:", a: ["Agisce lungo i piani di laminazione dei metalli", "Fa cadere solo la vernice", "È un graffio profondo"], c: "Agisce lungo i piani di laminazione dei metalli" },
+    { cat: "Corrosione", q: "L'erosione è causata da:", a: ["Azione meccanica di fluidi o particelle ad alta velocità", "Reazione chimica statica", "Frequenti lavaggi"], c: "Azione meccanica di fluidi o particelle ad alta velocità" },
+    { cat: "Manutenzione", q: "La pressione degli pneumatici cala naturalmente se:", a: ["La temperatura esterna diminuisce (freddo)", "L'aereo vola ad alta quota", "La temperatura aumenta (caldo)"], c: "La temperatura esterna diminuisce (freddo)" },
+    { cat: "Manutenzione", q: "La spina di sicurezza (split pin) serve a:", a: ["Evitare la rotazione dei dadi a intagli", "Bloccare i portelli", "Segnalare la chiusura dei bulloni"], c: "Evitare la rotazione dei dadi a intagli" },
+    { cat: "Manutenzione", q: "Il lavaggio del velivolo ha lo scopo di:", a: ["Rimuovere sali e agenti corrosivi", "Migliorare solo l'estetica per i passeggeri", "Non ha alcuno scopo tecnico"], c: "Rimuovere sali e agenti corrosivi" },
+    { cat: "CND - RT", q: "Il filtro in radiografia serve a:", a: ["Migliorare la qualità assorbendo radiazioni molli", "Pulire la lastra", "Raffreddare il pezzo"], c: "Migliorare la qualità assorbendo radiazioni molli" },
+    { cat: "CND - RT", q: "La grana della pellicola RT influenza:", a: ["La risoluzione dell'immagine (dettaglio)", "Il colore del pezzo in foto", "Il costo del trattamento"], c: "La risoluzione dell'immagine (dettaglio)" },
+    { cat: "CND - MT", q: "La sonda a sella (saddle) in MT si usa per:", a: ["Ispezionare tubi e barre", "Controllare le ali", "Controllare i motori jet"], c: "Ispezionare tubi e barre" }
+];
+
+const allQuestions = questionsData.concat(extraQuestionsData);
+const container = document.getElementById('quiz-container');
+const status = document.getElementById('status');
+let done = 0;
+let currentCategory = "";
+
+allQuestions.forEach((item, index) => {
+    if (item.cat !== currentCategory) {
+        currentCategory = item.cat;
+        const h = document.createElement('div');
+        h.className = 'section-header';
+        h.innerText = currentCategory;
+        container.appendChild(h);
+    }
+    const card = document.createElement('div');
+    card.className = 'question-card';
+    const txt = document.createElement('div');
+    txt.className = 'question-text';
+    txt.innerText = `${index + 1}. ${item.q}`;
+    card.appendChild(txt);
+    
+    const optsDiv = document.createElement('div');
+    optsDiv.className = 'options';
+    
+    // Creiamo una copia delle opzioni e le mescoliamo
+    const shuffledOptions = shuffle([...item.a]);
+    
+    shuffledOptions.forEach((atext) => {
+        const btn = document.createElement('button');
+        btn.innerText = atext;
+        btn.onclick = () => {
+            const btns = optsDiv.querySelectorAll('button');
+            btns.forEach(b => b.disabled = true);
+            if (atext === item.c) {
+                btn.classList.add('correct');
+            } else {
+                btn.classList.add('wrong');
+                // Trova e colora quella giusta
+                btns.forEach(b => { if(b.innerText === item.c) b.classList.add('correct'); });
+            }
+            done++;
+            status.innerText = `Domande completate: ${done} / ${allQuestions.length}`;
+        };
+        optsDiv.appendChild(btn);
+    });
+    card.appendChild(optsDiv);
+    container.appendChild(card);
+});
+</script>
+</body>
+</html>
